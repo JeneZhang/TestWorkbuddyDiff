@@ -4,406 +4,351 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>需求看板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    color-scheme: light;
-    --ink: #17202a;
-    --ink-2: #55616f;
-    --ink-3: #6f7b87;
-    --paper: #eceff3;
-    --card: #ffffff;
-    --line: #dde3e9;
-    --line-hard: #c2cad3;
-    --warn: #c2392f;
-    --link: #1f5c99;
-    --focus: #17202a;
-    --shadow: 0 1px 2px rgba(23, 32, 42, .07), 0 2px 6px rgba(23, 32, 42, .05);
-    --shadow-up: 0 2px 4px rgba(23, 32, 42, .09), 0 6px 14px rgba(23, 32, 42, .07);
+    color-scheme: dark;
+
+    /* 中性阶：页面最深，浮层最浅，四级足够表达层次 */
+    --bg:        #08090a;
+    --surface:   #0f1011;
+    --panel:     #16181a;
+    --panel-2:   #131517;
+    --raise:     #1c1f22;
+
+    --line:      #1f2226;
+    --line-2:    #2a2e33;
+
+    --text:      #e9ebed;
+    --text-2:    #8a9098;
+    --text-3:    #5c6167;
+
+    --accent:    #5e6ad2;
+    --accent-2:  #8b93e0;
+    --accent-bg: rgba(94, 106, 210, .13);
+
+    --ok:        #4cb782;
+    --amber:     #f2994a;
+    --err:       #eb5757;
+
+    --overlay: 0 0 0 1px rgba(255, 255, 255, .04),
+               0 8px 16px -4px rgba(0, 0, 0, .5),
+               0 24px 48px -12px rgba(0, 0, 0, .6);
   }
 
   * { box-sizing: border-box; }
 
   html, body { margin: 0; padding: 0; }
 
-  /* 顶栏定高、看板占满剩余高度并自己滚动，
-     这样列头的 sticky 相对看板生效，不依赖手填的顶栏高度 */
   body {
     height: 100vh;
     display: flex;
     flex-direction: column;
-    background: var(--paper);
-    color: var(--ink);
-    /* 中文字形较满，行高放宽、字距归零 */
-    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
-                 "Source Han Sans SC", "Noto Sans CJK SC", -apple-system, sans-serif;
-    font-size: 14px;
-    line-height: 1.7;
-    letter-spacing: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Inter, -apple-system, "SF Pro Text", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    /* 负字距对 Latin 有益，对中文几乎无感；数字一律等宽对齐 */
+    letter-spacing: -.006em;
+    font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
   }
 
-  .mono {
-    font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-variant-numeric: tabular-nums;
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-2);
+    border-radius: 6px;
+    border: 3px solid transparent;
+    background-clip: content-box;
   }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3f46; background-clip: content-box; }
 
-  /* ---------- 顶栏：标题行 + 筛选行 ---------- */
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px; }
 
-  .bar {
-    flex: none;
-    background: var(--card);
-    border-bottom: 1px solid var(--line-hard);
-    box-shadow: 0 1px 3px rgba(23, 32, 42, .04);
-    z-index: 20;
-  }
+  /* ---------- 顶栏 ---------- */
 
-  .bar-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 14px;
-    padding: 12px 22px;
-  }
+  .bar { flex: none; background: var(--bg); border-bottom: 1px solid var(--line); z-index: 30; }
 
-  .bar-row + .bar-row { border-top: 1px solid var(--line); padding: 9px 22px 10px; }
-
+  .bar-row { display: flex; align-items: center; gap: 10px; padding: 0 14px; height: 45px; }
+  .bar-row + .bar-row { border-top: 1px solid var(--line); height: 41px; }
   .bar-spacer { flex: 1 1 auto; }
 
-  /* 仓库名由数据驱动，不写死 */
-  .brand { display: flex; align-items: baseline; gap: 5px; margin: 0; font-size: 18px; font-weight: 600; }
-  .brand .org { color: var(--ink-3); font-weight: 500; font-size: 16px; }
-  .brand .slash { color: var(--line-hard); font-weight: 400; }
+  .brand { display: flex; align-items: center; gap: 2px; margin: 0; font-size: 13px; font-weight: 400; }
+  .brand .org { color: var(--text-2); }
+  .brand .slash { color: var(--text-3); padding: 0 2px; }
 
-  .repo-wrap { position: relative; display: inline-flex; align-items: baseline; }
+  .repo-wrap { position: relative; display: inline-flex; align-items: center; }
 
   .repo {
     font: inherit;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--ink);
+    font-weight: 500;
+    color: var(--text);
     background: transparent;
     border: 1px solid transparent;
-    border-radius: 6px;
-    padding: 1px 21px 1px 5px;
-    margin-left: -5px;
+    border-radius: 5px;
+    padding: 3px 20px 3px 6px;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
   }
 
-  .repo:hover { background: var(--paper); border-color: var(--line); }
+  .repo:hover { background: var(--raise); }
+  .repo option { background: var(--panel); color: var(--text); }
 
   .repo-wrap .caret {
-    position: absolute;
-    right: 6px;
-    top: 50%;
+    position: absolute; right: 6px; top: 50%;
     transform: translateY(-50%);
-    font-size: 10px;
-    color: var(--ink-3);
+    color: var(--text-3);
     pointer-events: none;
+    display: flex;
   }
 
-  .ctrl { display: inline-flex; align-items: center; gap: 7px; position: relative; }
-  .ctrl > label { font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+  .count { color: var(--text-3); white-space: nowrap; }
+  .count b { color: var(--text-2); font-weight: 500; }
 
-  .filter-btn {
+  /* ---------- 密度切换 ---------- */
+
+  .seg { display: inline-flex; gap: 2px; background: var(--surface); border-radius: 6px; padding: 2px; }
+
+  .seg button {
     font: inherit;
-    font-size: 13px;
-    color: var(--ink);
-    background: var(--card);
-    border: 1px solid var(--line-hard);
-    border-radius: 5px;
-    padding: 6px 12px;
+    font-size: 12px;
+    padding: 3px 10px;
+    background: transparent;
+    color: var(--text-2);
+    border: 0;
+    border-radius: 4px;
     cursor: pointer;
+  }
+
+  .seg button:hover { color: var(--text); }
+  .seg button[aria-pressed="true"] { background: var(--raise); color: var(--text); }
+
+  /* ---------- 筛选器 ---------- */
+
+  .ctrl { position: relative; display: inline-flex; }
+
+  .fbtn {
+    font: inherit;
+    font-size: 12px;
     display: flex;
     align-items: center;
     gap: 6px;
-    position: relative;
-    min-width: 120px;
-  }
-
-  .filter-btn:hover { border-color: var(--ink-3); background: var(--paper); }
-
-  .filter-btn.active {
-    border-color: var(--ink);
-    background: var(--paper);
-  }
-
-  .filter-btn::after {
-    content: "▾";
-    font-size: 10px;
-    color: var(--ink-3);
-    margin-left: auto;
-    transition: transform .2s;
-  }
-
-  .filter-btn.active::after {
-    transform: rotate(180deg);
-  }
-
-  .filter-menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background: var(--card);
-    border: 1px solid var(--line-hard);
-    border-radius: 5px;
-    box-shadow: var(--shadow-up);
-    z-index: 100;
-    margin-top: 4px;
-    min-width: 250px;
-    display: none;
-    flex-direction: column;
-    max-height: 400px;
-  }
-
-  .filter-menu.open { display: flex; }
-
-  .filter-search {
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--line);
-    flex-shrink: 0;
-  }
-
-  .filter-search input {
-    width: 100%;
-    font: inherit;
-    font-size: 13px;
-    border: 1px solid var(--line-hard);
-    border-radius: 4px;
-    padding: 6px 8px;
-  }
-
-  .filter-search input::placeholder {
-    color: var(--ink-3);
-  }
-
-  .filter-options {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    padding: 4px 0;
-  }
-
-  .filter-option {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    cursor: pointer;
-    font-size: 13px;
-    color: var(--ink);
-  }
-
-  .filter-option:hover {
-    background: var(--paper);
-  }
-
-  .filter-option input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-    accent-color: var(--ink);
-    flex-shrink: 0;
-  }
-
-  .filter-option label {
-    flex: 1;
-    cursor: pointer;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .filter-all {
-    padding: 8px 12px;
-    border-top: 1px solid var(--line);
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: var(--ink);
-    cursor: pointer;
-  }
-
-  .filter-all:hover {
-    background: var(--paper);
-  }
-
-  .filter-all input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-    accent-color: var(--ink);
-  }
-
-  .filter-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .filter-tag {
-    background: var(--paper);
+    max-width: 210px;
+    color: var(--text-2);
+    background: transparent;
     border: 1px solid var(--line);
-    border-radius: 3px;
-    padding: 2px 6px;
-    font-size: 12px;
-    color: var(--ink);
-    white-space: nowrap;
+    border-radius: 6px;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+
+  .fbtn:hover { background: var(--surface); border-color: var(--line-2); color: var(--text); }
+
+  /* 有筛选时才提亮；全选是静默态，不该抢注意力 */
+  .fbtn.on {
+    background: var(--accent-bg);
+    border-color: rgba(94, 106, 210, .38);
+    color: var(--accent-2);
+  }
+  .fbtn.on .fv { color: var(--text); }
+  .fbtn.on:hover { background: rgba(94, 106, 210, .2); }
+
+  .fbtn .fv {
+    color: var(--text);
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .count { font-size: 13px; color: var(--ink-2); white-space: nowrap; }
-  .count b { color: var(--ink); font-weight: 600; }
+  .fbtn .fn { color: var(--text-3); flex: none; }
+  .fbtn.on .fn { color: var(--accent-2); }
+  .fbtn .chev { flex: none; display: flex; opacity: .55; }
+  .fbtn[aria-expanded="true"] { background: var(--surface); border-color: var(--line-2); }
+
+  .fmenu {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    min-width: 238px;
+    max-height: 342px;
+    background: var(--panel);
+    border: 1px solid var(--line-2);
+    border-radius: 9px;
+    box-shadow: var(--overlay);
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .fmenu.open { display: flex; }
+
+  .fsearch { flex: none; padding: 7px 8px; border-bottom: 1px solid var(--line); }
+
+  .fsearch input {
+    width: 100%;
+    font: inherit;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--line-2);
+    border-radius: 5px;
+    padding: 5px 8px;
+  }
+
+  .fsearch input::placeholder { color: var(--text-3); }
+  .fsearch input:focus { outline: none; border-color: var(--accent); }
+
+  .fopts { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 5px; }
+
+  .opt {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 7px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .opt:hover { background: var(--raise); }
+  .opt input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+  .box {
+    flex: none;
+    width: 14px; height: 14px;
+    border: 1px solid var(--line-2);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--panel-2);
+  }
+
+  .box svg { opacity: 0; color: #fff; }
+  .opt:hover .box { border-color: #40454c; }
+  .opt input:checked ~ .box { background: var(--accent); border-color: var(--accent); }
+  .opt input:checked ~ .box svg { opacity: 1; }
+  .opt input:focus-visible ~ .box { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .opt-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .opt-t .sub { color: var(--text-3); }
+
+  /* 「全部」固定在底部，不随选项列表滚动 */
+  .fall {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--line);
+    background: var(--panel-2);
+    font-size: 12px;
+    color: var(--text-2);
+    cursor: pointer;
+  }
+
+  .fall:hover { color: var(--text); }
 
   .clear {
     font: inherit;
     font-size: 12px;
-    color: var(--ink-2);
-    background: var(--paper);
-    border: 1px solid var(--line-hard);
-    border-radius: 5px;
-    padding: 3px 9px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-2);
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    padding: 4px 8px;
     cursor: pointer;
   }
 
-  .clear:hover { color: var(--ink); border-color: var(--ink-3); }
+  .clear:hover { background: var(--surface); color: var(--text); }
   .clear[hidden] { display: none; }
 
-  .tabs { display: inline-flex; border: 1px solid var(--line-hard); border-radius: 5px; overflow: hidden; }
-
-  .tabs button {
-    font: inherit;
-    font-size: 13px;
-    padding: 4px 12px;
-    background: var(--card);
-    color: var(--ink-2);
-    border: 0;
-    border-right: 1px solid var(--line);
-    cursor: pointer;
-  }
-
-  .tabs button:last-child { border-right: 0; }
-  .tabs button:hover { background: var(--paper); }
-  .tabs button[aria-pressed="true"] { background: var(--ink); color: #fff; }
-
-  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-
   /* ---------- 看板 ---------- */
+  /* 每列独立纵向滚动，看板只负责横向 —— 列头无需 sticky */
 
-  /* 六列放不下一屏，横向滚动；列宽固定以免被压扁 */
-  /* 看板是唯一的滚动容器，列头相对它吸顶 */
   .board {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(228px, 1fr);
-    gap: 1px;
-    background: var(--line-hard);
-    align-items: stretch;
     flex: 1 1 auto;
     min-height: 0;
-    overflow: auto;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(236px, 1fr);
+    gap: 8px;
+    padding: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
   }
 
-  .col { background: var(--paper); padding: 0 12px 28px; min-width: 0; }
+  .col {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
 
   .col-head {
+    flex: none;
     display: flex;
-    align-items: baseline;
-    gap: 8px;
-    /* 负外边距让吸顶条盖住列的左右内边距，滚动时卡片不会从缝隙里透出来 */
-    margin: 0 -12px;
-    padding: 11px 14px 9px;
-    position: sticky;
-    top: 0;
-    background: var(--paper);
-    border-top: 3px solid var(--line-hard);
-    border-bottom: 1px solid var(--line);
-    z-index: 10;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 12px 9px;
   }
 
-  /* 单色深浅梯度提示流程方向，末列最深 —— 不需要图例 */
-  .col:nth-child(1) .col-head { border-top-color: #ccd3da; }
-  .col:nth-child(2) .col-head { border-top-color: #b4bec8; }
-  .col:nth-child(3) .col-head { border-top-color: #9aa5b1; }
-  .col:nth-child(4) .col-head { border-top-color: #7d8a97; }
-  .col:nth-child(5) .col-head { border-top-color: #55616f; }
-  .col:nth-child(6) .col-head { border-top-color: #17202a; }
+  .col-head .ico { flex: none; display: flex; }
+  .col-head h2 { margin: 0; font-size: 12px; font-weight: 500; color: var(--text); }
+  .col-head .n { font-size: 12px; color: var(--text-3); }
 
-  .col-head h2 { margin: 0; font-size: 14px; font-weight: 600; }
-
-  .col-head .n {
-    font-size: 12px;
-    color: var(--ink-2);
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 9px;
-    padding: 0 7px;
-  }
+  .col-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 8px 8px; }
 
   /* ---------- 卡片 ---------- */
-  /* 卡片是 article 而不是 button：按钮里不能嵌链接，
-     而编号与 PR 都要能单独点。整卡可点由标题链接的 ::after 铺满实现。 */
+  /* article 而非 button：编号与 PR 都要能单独点，整卡可点由标题的 ::after 铺满实现 */
 
   .card {
     position: relative;
-    background: var(--card);
+    background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 7px;
-    margin-bottom: 9px;
+    margin-bottom: 6px;
     overflow: hidden;
-    box-shadow: var(--shadow);
-    transition: box-shadow .12s ease, transform .12s ease, border-color .12s ease;
   }
 
-  .card:hover {
-    border-color: var(--line-hard);
-    box-shadow: var(--shadow-up);
-    transform: translateY(-1px);
-  }
+  .card:hover { background: var(--raise); border-color: var(--line-2); }
+  .card:focus-within { border-color: var(--accent); }
 
-  /* 卡片内获得焦点时整卡描边，键盘操作能看清位置 */
-  .card:focus-within { border-color: var(--ink-3); }
+  .card-body { padding: 9px 10px 8px; }
 
-  .card-body { padding: 11px 12px 10px; }
+  .card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 
-  .card-top { display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px; }
-
-  /* 编号是独立链接，层级高于标题的铺满层 */
   .id {
-    font-size: 12px;
-    color: var(--ink-3);
+    font-size: 11px;
+    color: var(--text-3);
     flex: none;
     text-decoration: none;
-    border-bottom: 1px solid transparent;
     position: relative;
     z-index: 2;
   }
 
-  .id:hover { color: var(--link); border-bottom-color: currentColor; }
+  .id:hover { color: var(--accent-2); }
 
-  .ver {
-    margin-left: auto;
-    font-size: 11px;
-    color: var(--ink-2);
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: 3px;
-    padding: 0 6px;
-    flex: none;
-  }
+  .ver { margin-left: auto; font-size: 11px; color: var(--text-3); flex: none; }
 
-  .title { margin: 0 0 9px; font-size: 14px; font-weight: 600; line-height: 1.55; }
+  .title { margin: 0 0 9px; font-size: 13px; font-weight: 450; line-height: 1.45; }
 
-  /* 标题链接铺满整张卡：点卡片任意空白处即进详情 */
   .title a {
-    color: inherit;
+    color: var(--text);
     text-decoration: none;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -412,98 +357,102 @@
   }
 
   .title a::after { content: ""; position: absolute; inset: 0; z-index: 1; }
-  .card:hover .title a { color: var(--link); }
 
-  /* ---------- 人：创建人 → 处理人（可多人） ---------- */
-  /* 颜色用于身份识别，不用于状态；名字紧随头像，无需图例 */
+  /* ---------- 人：创建人 → 处理人 ---------- */
+  /* 头像配色只做身份识别，不承载状态 */
 
-  .meta { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink-2); min-width: 0; }
-
+  .meta { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-2); min-width: 0; }
   .ppl { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
   .ppl .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .meta .to { color: var(--text-3); flex: none; display: flex; }
 
-  .meta .to { color: var(--line-hard); flex: none; font-size: 11px; }
-
-  /* 多人时头像轻微叠放，省宽度又能看出人数 */
   .faces { display: inline-flex; flex: none; }
-  .faces .who + .who { margin-left: -5px; }
+  .faces .who + .who { margin-left: -4px; }
 
   .who {
-    width: 20px; height: 20px;
+    width: 17px; height: 17px;
     border-radius: 50%;
-    background: var(--ink-2);
     color: #fff;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 500;
     line-height: 1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex: none;
-    box-shadow: 0 0 0 1.5px var(--card);
+    box-shadow: 0 0 0 1.5px var(--panel);
+    letter-spacing: 0;
   }
 
-  .who[data-c="1"] { background: #2a5f91; }
-  .who[data-c="2"] { background: #1c6657; }
-  .who[data-c="3"] { background: #6f4a91; }
-  .who[data-c="4"] { background: #94551f; }
-  .who[data-c="5"] { background: #4d5a68; }
-  .who[data-c="6"] { background: #8c3559; }
+  .card:hover .who { box-shadow: 0 0 0 1.5px var(--raise); }
+
+  .who[data-c="1"] { background: #4c6ef5; }
+  .who[data-c="2"] { background: #2f9e74; }
+  .who[data-c="3"] { background: #8a63d2; }
+  .who[data-c="4"] { background: #c2703e; }
+  .who[data-c="5"] { background: #5a6570; }
+  .who[data-c="6"] { background: #bf4b7d; }
 
   .who.na {
     background: transparent;
-    border: 1px dashed var(--line-hard);
-    color: var(--ink-3);
-    font-size: 10px;
+    border: 1px dashed var(--line-2);
+    color: var(--text-3);
     box-shadow: none;
   }
 
-  .ppl.na .nm { color: var(--ink-3); }
+  .ppl.na .nm { color: var(--text-3); }
 
-  /* ---------- 状态区：关键词，不用色块 ---------- */
-  /* PR 与流水线各占一行，互不混用 */
+  /* ---------- 状态区 ---------- */
+  /* PR 与流水线各占一行，互不混用；颜色只落在流水线圆点上 */
 
-  .state { border-top: 1px solid var(--line); background: #fbfcfd; }
+  .state { border-top: 1px solid var(--line); background: var(--panel-2); }
+  .card:hover .state { background: rgba(0, 0, 0, .18); }
 
-  .row {
-    padding: 6px 12px;
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    min-width: 0;
-  }
+  .row { padding: 5px 10px; display: flex; align-items: center; gap: 7px; min-width: 0; }
+  .row + .row { padding-top: 0; }
 
-  .row + .row { border-top: 1px dashed var(--line); }
+  .row .kw { font-size: 11px; flex: none; color: var(--text-2); }
+  .row[data-pr="none"] .kw { color: var(--text-3); }
+  .row[data-pr="merged"] .kw { color: var(--accent-2); }
 
-  /* 关键词靠字重与字色分级，不靠颜色块 */
-  /* 不设标签列：关键词自身已说明维度（「PR 开启中」「流水线失败」） */
-  .row .kw { font-size: 13px; font-weight: 600; flex: none; }
-
-  .row[data-pr="none"]   .kw { color: var(--ink-3); font-weight: 400; }
-  .row[data-pr="open"]   .kw { color: var(--ink); }
-  .row[data-pr="merged"] .kw { color: var(--ink-2); font-weight: 400; }
-
-  .row[data-ci="pass"]    .kw { color: var(--ink-2); font-weight: 400; }
-  .row[data-ci="running"] .kw { color: var(--ink); }
-  .row[data-ci="fail"]    .kw { color: var(--warn); }
-  .row[data-ci="na"]      .kw { color: var(--ink-3); font-weight: 400; }
-
-  /* PR 引用是独立链接，层级高于标题的铺满层 */
   .row .ref {
-    font-size: 12px;
-    color: var(--ink-2);
+    font-size: 11px;
+    color: var(--text-3);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     text-decoration: none;
-    border-bottom: 1px solid transparent;
     position: relative;
     z-index: 2;
   }
 
-  .row a.ref:hover { color: var(--link); border-bottom-color: currentColor; }
+  .row a.ref:hover { color: var(--accent-2); }
+  .row .more { margin-left: auto; flex: none; font-size: 11px; color: var(--text-3); }
 
-  .row .more { margin-left: auto; flex: none; font-size: 12px; color: var(--ink-3); }
+  /* 流水线状态：实心点=终态，环形=进行中，空心=未触发 */
+  .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; position: relative; }
+  .dot.pass { background: var(--ok); }
+  .dot.fail { background: var(--err); }
+  .dot.na   { border: 1px solid var(--line-2); }
+
+  .dot.running {
+    background: conic-gradient(var(--amber) 0 72%, transparent 72%);
+    animation: spin 1.3s linear infinite;
+  }
+
+  .dot.running::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: 50%;
+    background: var(--panel-2);
+  }
+
+  .card:hover .dot.running::after { background: #12151a; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .row[data-ci="fail"] .kw { color: var(--err); }
 
   /* ---------- 紧凑模式 ---------- */
   /* 保留头像（站会要知道谁在做），隐去名字与引用 */
@@ -512,29 +461,30 @@
   body[data-density="compact"] .row .ref { display: none; }
   body[data-density="compact"] .title a { -webkit-line-clamp: 1; }
   body[data-density="compact"] .title { margin-bottom: 7px; }
+  body[data-density="compact"] .card-body { padding: 8px 10px 7px; }
 
-  .empty {
-    border: 1px dashed var(--line-hard);
-    border-radius: 7px;
-    padding: 14px 12px;
-    font-size: 13px;
-    color: var(--ink-3);
-    text-align: center;
-  }
+  .empty { padding: 10px 2px; font-size: 12px; color: var(--text-3); }
 
   @media (max-width: 900px) {
-    /* 窄屏纵向排列，交回页面滚动。顶栏吸顶；列头改为静态——
-       顶栏在窄屏会折行、高度不定，两个 sticky 叠在 top:0 只会互相遮挡 */
+    /* 窄屏纵向排列，交回页面滚动 */
     body { height: auto; display: block; }
     .bar { position: sticky; top: 0; }
-    .board { grid-auto-flow: row; grid-auto-columns: auto; min-height: 0; overflow: visible; }
-    .col-head { position: static; }
-    .col { padding-bottom: 14px; }
+    .bar-row { flex-wrap: wrap; height: auto; padding: 8px 12px; }
+    .bar-row + .bar-row { height: auto; }
+    .board {
+      grid-auto-flow: row;
+      grid-auto-columns: auto;
+      overflow: visible;
+      min-height: 0;
+    }
+    .col { overflow: visible; }
+    .col-body { overflow: visible; max-height: none; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; animation: none !important; }
-    .card:hover { transform: none; }
+    * { animation: none !important; transition: none !important; }
+    .dot.running { background: var(--amber); }
+    .dot.running::after { display: none; }
   }
 </style>
 </head>
@@ -546,7 +496,9 @@
       <span class="org">workbuddy</span><span class="slash">/</span>
       <span class="repo-wrap">
         <select id="f-repo" class="repo" aria-label="仓库"></select>
-        <span class="caret">▾</span>
+        <span class="caret">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4 5 6.5 7.5 4"/></svg>
+        </span>
       </span>
     </h1>
 
@@ -554,94 +506,13 @@
 
     <span class="bar-spacer"></span>
 
-    <div class="tabs" role="group" aria-label="卡片密度">
+    <div class="seg" role="group" aria-label="卡片密度">
       <button type="button" data-d="full" aria-pressed="true">完整</button>
       <button type="button" data-d="compact" aria-pressed="false">紧凑</button>
     </div>
   </div>
 
-  <div class="bar-row">
-    <div class="ctrl">
-      <label>版本</label>
-      <button type="button" class="filter-btn" data-filter="ver" aria-expanded="false">
-        <span class="filter-tags" id="f-ver-tags"></span>
-      </button>
-      <div class="filter-menu" id="f-ver-menu">
-        <div class="filter-search">
-          <input type="text" placeholder="搜索" class="filter-search-input">
-        </div>
-        <div class="filter-options" id="f-ver-options"></div>
-        <label class="filter-all">
-          <input type="checkbox" data-filter="ver" class="filter-all-checkbox" checked>
-          <span>全部</span>
-        </label>
-      </div>
-    </div>
-
-    <div class="ctrl">
-      <label>创建人</label>
-      <button type="button" class="filter-btn" data-filter="who" aria-expanded="false">
-        <span class="filter-tags" id="f-who-tags"></span>
-      </button>
-      <div class="filter-menu" id="f-who-menu">
-        <div class="filter-search">
-          <input type="text" placeholder="搜索" class="filter-search-input">
-        </div>
-        <div class="filter-options" id="f-who-options"></div>
-        <label class="filter-all">
-          <input type="checkbox" data-filter="who" class="filter-all-checkbox" checked>
-          <span>全部</span>
-        </label>
-      </div>
-    </div>
-
-    <div class="ctrl">
-      <label>处理人</label>
-      <button type="button" class="filter-btn" data-filter="as" aria-expanded="false">
-        <span class="filter-tags" id="f-as-tags"></span>
-      </button>
-      <div class="filter-menu" id="f-as-menu">
-        <div class="filter-search">
-          <input type="text" placeholder="搜索" class="filter-search-input">
-        </div>
-        <div class="filter-options" id="f-as-options"></div>
-        <label class="filter-all">
-          <input type="checkbox" data-filter="as" class="filter-all-checkbox" checked>
-          <span>全部</span>
-        </label>
-      </div>
-    </div>
-
-    <div class="ctrl">
-      <label>PR 状态</label>
-      <button type="button" class="filter-btn" data-filter="pr" aria-expanded="false">
-        <span class="filter-tags" id="f-pr-tags"></span>
-      </button>
-      <div class="filter-menu" id="f-pr-menu">
-        <div class="filter-options" id="f-pr-options"></div>
-        <label class="filter-all">
-          <input type="checkbox" data-filter="pr" class="filter-all-checkbox" checked>
-          <span>全部</span>
-        </label>
-      </div>
-    </div>
-
-    <div class="ctrl">
-      <label>流水线</label>
-      <button type="button" class="filter-btn" data-filter="ci" aria-expanded="false">
-        <span class="filter-tags" id="f-ci-tags"></span>
-      </button>
-      <div class="filter-menu" id="f-ci-menu">
-        <div class="filter-options" id="f-ci-options"></div>
-        <label class="filter-all">
-          <input type="checkbox" data-filter="ci" class="filter-all-checkbox" checked>
-          <span>全部</span>
-        </label>
-      </div>
-    </div>
-
-    <button type="button" class="clear" id="clear" hidden>清空筛选</button>
-  </div>
+  <div class="bar-row" id="filters"></div>
 </div>
 
 <div class="board" id="board"></div>
@@ -668,7 +539,7 @@ const HOST = "https://git.workbuddy.internal/workbuddy";
 function issueURL(repo, id) { return HOST + "/" + repo + "/issues/" + id; }
 function prURL(repo, num)   { return HOST + "/" + repo + "/pulls/" + num; }
 
-// 人：c 是头像配色编号。颜色只用于身份识别，不承载状态含义。
+// c 是头像配色编号。颜色只用于身份识别，不承载状态含义。
 const PEOPLE = {
   alice:  { nick: "林安", c: 1 },
   bob:    { nick: "陈博", c: 2 },
@@ -678,10 +549,9 @@ const PEOPLE = {
   fang:   { nick: "方琳", c: 6 }
 };
 
-// who = 创建人（单人）；as = 处理人数组，可多人，空数组表示未分配
-// PR 三态：pr 为 null 表示未关联；merged 决定「已合并」或「PR 开启中」
+// who = 创建人（单人）；as = 处理人数组，空数组表示未分配
+// PR 三态：pr 为 null 表示未关联；merged 决定「已合并」或「开启中」
 // ci 独立于 PR 状态：'pass' | 'running' | 'fail' | null(未触发)
-// 卡片只展示标题，不展示描述正文
 const ISSUES = [
   { id: 421, repo: "api", col: "to-review", ver: "5.8.0", who: "alice", as: [],
     title: "部署接口补充结构化日志", pr: null },
@@ -751,48 +621,76 @@ const ISSUES = [
     pr: { num: 950, author: "周德", merged: true, into: "release/5.8.0", ci: "pass" } }
 ];
 
-// PR 三态判定：无 PR / PR 开启中 / 已合并。刻意不读取 ci 字段。
+// PR 三态判定：无 PR / 开启中 / 已合并。刻意不读取 ci 字段。
 function prOf(pr) {
-  if (!pr) return { key: "none", kw: "无 PR", ref: "", more: "" };
+  if (!pr) return { key: "none", kw: "未关联 PR", ref: "", more: "" };
   if (pr.merged) return {
     key: "merged", kw: "已合并",
     ref: "#" + pr.num + " → " + (pr.into || "未知分支"),
     more: pr.extra ? "另 " + pr.extra + " 个" : ""
   };
   return {
-    key: "open", kw: "PR 开启中",
-    ref: "#" + pr.num + " · " + pr.author,
+    key: "open", kw: "开启中",
+    ref: "#" + pr.num + " " + pr.author,
     more: pr.extra ? "另 " + pr.extra + " 个" : ""
   };
 }
 
 // 流水线状态判定：与 PR 状态完全独立，互不覆盖
-// 关键词自带「流水线」前缀，因此卡片上不再需要单独的标签列
-const CI_TEXT = { pass: "流水线通过", running: "流水线运行中", fail: "流水线失败" };
+const CI_TEXT = { pass: "构建通过", running: "构建中", fail: "构建失败" };
 
 function ciOf(pr) {
-  if (!pr || !pr.ci) return { key: "na", kw: "流水线未触发", show: !!pr };
+  if (!pr || !pr.ci) return { key: "na", kw: "未触发构建", show: !!pr };
   return { key: pr.ci, kw: CI_TEXT[pr.ci], show: true };
 }
 
 const board = document.getElementById("board");
 const fRepo = document.getElementById("f-repo");
 const countEl = document.getElementById("count");
-const clearBtn = document.getElementById("clear");
+const filtersEl = document.getElementById("filters");
 
-const filterConfigs = {
-  ver: { menuId: "f-ver-menu", optionsId: "f-ver-options", tagsId: "f-ver-tags", searchable: true },
-  who: { menuId: "f-who-menu", optionsId: "f-who-options", tagsId: "f-who-tags", searchable: true },
-  as: { menuId: "f-as-menu", optionsId: "f-as-options", tagsId: "f-as-tags", searchable: true },
-  pr: { menuId: "f-pr-menu", optionsId: "f-pr-options", tagsId: "f-pr-tags", searchable: false },
-  ci: { menuId: "f-ci-menu", optionsId: "f-ci-options", tagsId: "f-ci-tags", searchable: false }
-};
+// 顺序即渲染顺序；searchable 决定菜单是否带搜索框
+const FILTERS = [
+  { key: "ver", label: "版本",    searchable: true },
+  { key: "who", label: "创建人",  searchable: true },
+  { key: "as",  label: "处理人",  searchable: true },
+  { key: "pr",  label: "PR",     searchable: false },
+  { key: "ci",  label: "流水线",  searchable: false }
+];
 
 const NO_ASSIGNEE = "__none";
-const MAX_FACES = 3;
+const MAX_FACES = 3;   // 超出只叠 3 个头像，余下以 +N 表示
+
+const TICK = '<svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.6 5.2 3.9 7.4 8.4 2.4"/></svg>';
+const CHEV = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4 5 6.5 7.5 4"/></svg>';
 
 function esc(s) {
   return String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+}
+
+// 列头图标把流程位置编码成环形填充量：虚线环 → 逐级填充 → 实心带勾
+function colIcon(i, total) {
+  const last = i === total - 1;
+  const c = i === 0 ? "#5c6167" : last ? "#4cb782" : i === 1 ? "#8a9098" : "#5e6ad2";
+
+  if (last) {
+    return '<svg width="14" height="14" viewBox="0 0 14 14" fill="none">' +
+      '<circle cx="7" cy="7" r="6.25" fill="' + c + '"/>' +
+      '<path d="M4.2 7.1 6.1 9 9.8 5.2" stroke="#08090a" stroke-width="1.5" ' +
+        'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
+
+  // 内圈用粗描边从圆心往外铺，dasharray 控制填充比例（r=2.75 周长≈17.28）
+  const frac = [0, 0, .34, .62, .86][i] || 0;
+  const inner = frac
+    ? '<circle cx="7" cy="7" r="2.75" fill="none" stroke="' + c + '" stroke-width="5.5" ' +
+      'stroke-dasharray="' + (17.28 * frac).toFixed(2) + ' 17.28" transform="rotate(-90 7 7)"/>'
+    : '';
+
+  return '<svg width="14" height="14" viewBox="0 0 14 14" fill="none">' +
+    '<circle cx="7" cy="7" r="5.6" stroke="' + c + '" stroke-width="1.4"' +
+      (i === 0 ? ' stroke-dasharray="1.7 2.1"' : '') + '/>' +
+    inner + '</svg>';
 }
 
 // 语义化版本按段比较：字典序会把 5.10.0 排到 5.9.0 前面
@@ -809,98 +707,112 @@ function byNick(a, b) {
   return PEOPLE[a].nick.localeCompare(PEOPLE[b].nick, "zh-CN");
 }
 
+function avatar(k) {
+  const p = PEOPLE[k];
+  return '<span class="who" data-c="' + p.c + '">' + esc(p.nick.slice(0, 1)) + '</span>';
+}
+
 REPOS.forEach(r => {
   fRepo.insertAdjacentHTML("beforeend", '<option value="' + r.key + '">' + esc(r.name) + '</option>');
 });
 
-// 选项只列当前仓库里实际存在的值，避免选出必然为空的组合。
-// 切仓库后若原选项仍存在则保留，否则回到「全部」。
-function fillOptions(filterKey, pairs) {
-  const config = filterConfigs[filterKey];
-  const optionsEl = document.getElementById(config.optionsId);
-  const menu = document.getElementById(config.menuId);
-  const allCheckbox = menu.querySelector(".filter-all-checkbox");
-  const prev = Array.from(optionsEl.querySelectorAll("input:checked"), e => e.value);
+// 筛选器结构由 FILTERS 生成，新增一个维度只需往数组里加一项
+filtersEl.innerHTML = FILTERS.map(f =>
+  '<div class="ctrl">' +
+    '<button type="button" class="fbtn" data-filter="' + f.key + '" aria-expanded="false">' +
+      '<span class="fn">' + esc(f.label) + '</span>' +
+      '<span class="fv" id="f-' + f.key + '-val"></span>' +
+      '<span class="chev">' + CHEV + '</span>' +
+    '</button>' +
+    '<div class="fmenu" id="f-' + f.key + '-menu">' +
+      (f.searchable
+        ? '<div class="fsearch"><input type="text" class="fsearch-input" placeholder="搜索' +
+          esc(f.label) + '" aria-label="搜索' + esc(f.label) + '"></div>'
+        : '') +
+      '<div class="fopts" id="f-' + f.key + '-opts" data-filter="' + f.key + '"></div>' +
+      '<label class="fall">' +
+        '<input type="checkbox" class="fall-cb" data-filter="' + f.key + '" checked>' +
+        '<span class="box">' + TICK + '</span><span>全部</span>' +
+      '</label>' +
+    '</div>' +
+  '</div>'
+).join("") +
+  '<span class="bar-spacer"></span>' +
+  '<button type="button" class="clear" id="clear" hidden>清空筛选</button>';
 
-  optionsEl.innerHTML = pairs.map(([v, l]) =>
-    `<label class="filter-option">
-      <input type="checkbox" value="${esc(v)}" checked>
-      <span>${esc(l)}</span>
-    </label>`
+const clearBtn = document.getElementById("clear");
+
+function optsEl(key) { return document.getElementById("f-" + key + "-opts"); }
+function menuEl(key) { return document.getElementById("f-" + key + "-menu"); }
+function btnEl(key)  { return document.querySelector('.fbtn[data-filter="' + key + '"]'); }
+
+// 选项只列当前仓库里实际存在的值，避免选出必然为空的组合。
+// 切仓库后沿用原选择；原值已不存在的部分自然落空，全新值默认选中。
+function fillOptions(key, items) {
+  const el = optsEl(key);
+  const first = el.dataset.ready !== "1";
+  const prev = first ? null : new Set(getSelected(key));
+  const dropped = first ? null : new Set(
+    Array.from(el.querySelectorAll("input"), i => i.value).filter(v => !prev.has(v))
+  );
+
+  el.innerHTML = items.map(([v, label, pre]) =>
+    '<label class="opt">' +
+      '<input type="checkbox" value="' + esc(v) + '" data-label="' + esc(label) + '"' +
+        (dropped && dropped.has(v) ? '' : ' checked') + '>' +
+      '<span class="box">' + TICK + '</span>' +
+      (pre || '') +
+      '<span class="opt-t">' + esc(label) + '</span>' +
+    '</label>'
   ).join("");
 
-  optionsEl.querySelectorAll("input").forEach(cb => {
-    cb.addEventListener("change", () => {
-      updateAllCheckboxState(filterKey);
-      updateTags(filterKey);
-      render();
-    });
-  });
-
-  allCheckbox.addEventListener("change", () => {
-    const checked = allCheckbox.checked;
-    optionsEl.querySelectorAll("input").forEach(cb => cb.checked = checked);
-    updateTags(filterKey);
-    render();
-  });
-
-  allCheckbox.checked = true;
-  updateTags(filterKey);
+  el.dataset.ready = "1";
+  syncAll(key);
 }
 
-function updateAllCheckboxState(filterKey) {
-  const config = filterConfigs[filterKey];
-  const optionsEl = document.getElementById(config.optionsId);
-  const menu = document.getElementById(config.menuId);
-  const allCheckbox = menu.querySelector(".filter-all-checkbox");
-
-  const checkboxes = Array.from(optionsEl.querySelectorAll("input"));
-  const allChecked = checkboxes.length > 0 && checkboxes.every(cb => cb.checked);
-  allCheckbox.checked = allChecked;
+function getSelected(key) {
+  return Array.from(optsEl(key).querySelectorAll("input:checked"), e => e.value);
 }
 
-function updateTags(filterKey) {
-  const config = filterConfigs[filterKey];
-  const optionsEl = document.getElementById(config.optionsId);
-  const selectedValues = Array.from(optionsEl.querySelectorAll("input:checked"), e => e.value);
-  const tagsEl = document.getElementById(config.tagsId);
+// 按钮只展示首项 + 余量，避免选多了把顶栏撑开
+function syncAll(key) {
+  const all = Array.from(optsEl(key).querySelectorAll("input"));
+  const on = all.filter(cb => cb.checked);
+  const isAll = all.length > 0 && on.length === all.length;
 
-  const allCount = optionsEl.querySelectorAll("input").length;
+  menuEl(key).querySelector(".fall-cb").checked = isAll;
 
-  if (selectedValues.length === 0) {
-    tagsEl.innerHTML = `<span class="filter-tag">无选择</span>`;
-    document.querySelector(`[data-filter="${filterKey}"]`).classList.add("active");
-  } else if (selectedValues.length === allCount) {
-    tagsEl.innerHTML = `<span class="filter-tag">全部</span>`;
-    document.querySelector(`[data-filter="${filterKey}"]`).classList.remove("active");
+  const valEl = document.getElementById("f-" + key + "-val");
+  const btn = btnEl(key);
+
+  if (isAll) {
+    valEl.textContent = "";
+    btn.classList.remove("on");
+  } else if (!on.length) {
+    valEl.textContent = "无";
+    btn.classList.add("on");
   } else {
-    const labels = Array.from(optionsEl.querySelectorAll("input:checked")).map(cb => {
-      return cb.nextElementSibling.textContent.trim();
-    });
-    tagsEl.innerHTML = labels.map(l => `<span class="filter-tag">${esc(l)}</span>`).join("");
-    document.querySelector(`[data-filter="${filterKey}"]`).classList.add("active");
+    valEl.textContent = on[0].dataset.label + (on.length > 1 ? "  +" + (on.length - 1) : "");
+    btn.classList.add("on");
   }
-}
-
-function getSelectedValues(filterKey) {
-  const config = filterConfigs[filterKey];
-  const optionsEl = document.getElementById(config.optionsId);
-  return Array.from(optionsEl.querySelectorAll("input:checked"), e => e.value);
 }
 
 function rebuildFilters() {
   const inRepo = ISSUES.filter(i => i.repo === fRepo.value);
 
   fillOptions("ver", [...new Set(inRepo.map(i => i.ver))].sort(cmpVer).map(v => [v, "v" + v]));
-  fillOptions("who", [...new Set(inRepo.map(i => i.who))].sort(byNick).map(k => [k, PEOPLE[k].nick]));
+  fillOptions("who", [...new Set(inRepo.map(i => i.who))].sort(byNick)
+    .map(k => [k, PEOPLE[k].nick, avatar(k)]));
 
-  const assignees = [...new Set(inRepo.flatMap(i => i.as))].sort(byNick)
-    .map(k => [k, PEOPLE[k].nick]);
-  if (inRepo.some(i => i.as.length === 0)) assignees.push([NO_ASSIGNEE, "未分配"]);
-  fillOptions("as", assignees);
+  // 处理人可多人，所以按 flatMap 汇总
+  const as = [...new Set(inRepo.flatMap(i => i.as))].sort(byNick)
+    .map(k => [k, PEOPLE[k].nick, avatar(k)]);
+  if (inRepo.some(i => i.as.length === 0)) as.push([NO_ASSIGNEE, "未分配"]);
+  fillOptions("as", as);
 
-  fillOptions("pr", [["none", "无 PR"], ["open", "PR 开启中"], ["merged", "已合并"]]);
-  fillOptions("ci", [["fail", "流水线失败"], ["running", "流水线运行中"], ["pass", "流水线通过"], ["na", "流水线未触发"]]);
+  fillOptions("pr", [["none", "未关联 PR"], ["open", "开启中"], ["merged", "已合并"]]);
+  fillOptions("ci", [["fail", "构建失败"], ["running", "构建中"],
+                     ["pass", "构建通过"], ["na", "未触发构建"]]);
 }
 
 function repoName() {
@@ -916,11 +828,7 @@ function peopleHTML(keys, role) {
   }
 
   const all = keys.map(k => PEOPLE[k].nick).join("、");
-  const faces = keys.slice(0, MAX_FACES).map(k => {
-    const p = PEOPLE[k];
-    return '<span class="who" data-c="' + p.c + '">' + esc(p.nick.slice(0, 1)) + '</span>';
-  }).join("");
-
+  const faces = keys.slice(0, MAX_FACES).map(avatar).join("");
   const label = keys.length === 1
     ? esc(PEOPLE[keys[0]].nick)
     : esc(PEOPLE[keys[0]].nick) + " +" + (keys.length - 1);
@@ -931,28 +839,26 @@ function peopleHTML(keys, role) {
          '</span>';
 }
 
+const ARROW = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 5h7M6 2.5 8.5 5 6 7.5"/></svg>';
+
 function cardHTML(it) {
   const p = prOf(it.pr);
   const c = ciOf(it.pr);
 
-  // PR 引用做成链接；无 PR 时没有可指向的地址，保持纯文本
+  // 无 PR 时没有可指向的地址，保持纯文本
   const refHTML = p.ref
-    ? (it.pr
-        ? '<a class="ref mono" href="' + prURL(it.repo, it.pr.num) + '" target="_blank" rel="noopener">' +
-            esc(p.ref) + '</a>'
-        : '<span class="ref mono">' + esc(p.ref) + '</span>')
+    ? '<a class="ref" href="' + prURL(it.repo, it.pr.num) + '" target="_blank" rel="noopener">' +
+        esc(p.ref) + '</a>'
     : '';
 
-  // PR 与流水线各自一行，独立渲染，互不影响
-  // 关键词自身已说明维度，不再加标签列
   const prRow = '<div class="row" data-pr="' + p.key + '">' +
-      '<span class="kw">' + esc(p.kw) + '</span>' +
-      refHTML +
+      '<span class="kw">' + esc(p.kw) + '</span>' + refHTML +
       (p.more ? '<span class="more">' + esc(p.more) + '</span>' : '') +
     '</div>';
 
   const ciRow = c.show
     ? '<div class="row" data-ci="' + c.key + '">' +
+        '<span class="dot ' + c.key + '"></span>' +
         '<span class="kw">' + esc(c.kw) + '</span>' +
       '</div>'
     : '';
@@ -960,15 +866,15 @@ function cardHTML(it) {
   return '<article class="card">' +
     '<div class="card-body">' +
       '<div class="card-top">' +
-        '<a class="id mono" href="' + issueURL(it.repo, it.id) + '" target="_blank" rel="noopener">#' +
+        '<a class="id" href="' + issueURL(it.repo, it.id) + '" target="_blank" rel="noopener">#' +
           it.id + '</a>' +
-        '<span class="ver mono">v' + esc(it.ver) + '</span>' +
+        '<span class="ver">v' + esc(it.ver) + '</span>' +
       '</div>' +
       '<h3 class="title"><a href="' + issueURL(it.repo, it.id) + '" target="_blank" rel="noopener">' +
         esc(it.title) + '</a></h3>' +
       '<div class="meta">' +
         peopleHTML([it.who], "创建人") +
-        '<span class="to">→</span>' +
+        '<span class="to">' + ARROW + '</span>' +
         peopleHTML(it.as, "处理人") +
       '</div>' +
     '</div>' +
@@ -977,117 +883,117 @@ function cardHTML(it) {
 }
 
 function render() {
-  let v = getSelectedValues("ver");
-  let w = getSelectedValues("who");
-  let a = getSelectedValues("as");
-  let p = getSelectedValues("pr");
-  let ci = getSelectedValues("ci");
+  // 全选等同于不筛选：维度整体放行，不参与过滤
+  const pick = key => {
+    const all = optsEl(key).querySelectorAll("input").length;
+    const on = getSelected(key);
+    return on.length === all ? null : on;
+  };
 
-  // 当全选时，视为不筛选
-  const verAll = document.getElementById("f-ver-options").querySelectorAll("input").length;
-  const whoAll = document.getElementById("f-who-options").querySelectorAll("input").length;
-  const asAll = document.getElementById("f-as-options").querySelectorAll("input").length;
-  const prAll = document.getElementById("f-pr-options").querySelectorAll("input").length;
-  const ciAll = document.getElementById("f-ci-options").querySelectorAll("input").length;
-
-  if (v.length === verAll) v = [];
-  if (w.length === whoAll) w = [];
-  if (a.length === asAll) a = [];
-  if (p.length === prAll) p = [];
-  if (ci.length === ciAll) ci = [];
-
-  const filtering = !!(v.length || w.length || a.length || p.length || ci.length);
+  const v = pick("ver"), w = pick("who"), a = pick("as"), p = pick("pr"), ci = pick("ci");
+  const filtering = [v, w, a, p, ci].some(x => x !== null);
 
   const inRepo = ISSUES.filter(it => it.repo === fRepo.value);
 
   const shown = inRepo.filter(it =>
-    (!v.length || v.includes(it.ver)) &&
-    (!w.length || w.includes(it.who)) &&
-    (!a.length || (a.includes(NO_ASSIGNEE) ? it.as.length === 0 : it.as.some(x => a.includes(x)))) &&
-    (!p.length || p.includes(prOf(it.pr).key)) &&
-    (!ci.length || ci.includes(ciOf(it.pr).key))
+    (!v  || v.includes(it.ver)) &&
+    (!w  || w.includes(it.who)) &&
+    (!a  || (it.as.length ? it.as.some(x => a.includes(x)) : a.includes(NO_ASSIGNEE))) &&
+    (!p  || p.includes(prOf(it.pr).key)) &&
+    (!ci || ci.includes(ciOf(it.pr).key))
   );
 
-  board.innerHTML = COLS.map(c => {
-    const items = shown.filter(i => i.col === c.key);
+  board.innerHTML = COLS.map((c, i) => {
+    const items = shown.filter(x => x.col === c.key);
 
     return '<section class="col">' +
       '<div class="col-head">' +
+        '<span class="ico">' + colIcon(i, COLS.length) + '</span>' +
         '<h2>' + c.name + '</h2>' +
-        '<span class="n mono">' + items.length + '</span>' +
+        '<span class="n">' + items.length + '</span>' +
       '</div>' +
-      (items.length
-        ? items.map(cardHTML).join("")
-        : '<div class="empty">' + (filtering ? "当前筛选下没有需求" : "暂无需求") + '</div>') +
+      '<div class="col-body">' +
+        (items.length
+          ? items.map(cardHTML).join("")
+          : '<div class="empty">' + (filtering ? "没有匹配的需求" : "暂无需求") + '</div>') +
+      '</div>' +
     '</section>';
   }).join("");
 
   countEl.innerHTML = filtering
-    ? '筛选出 <b>' + shown.length + '</b> 条 / 共 ' + inRepo.length + ' 条'
-    : '共 <b>' + inRepo.length + '</b> 条需求';
+    ? '<b>' + shown.length + '</b> / ' + inRepo.length + ' 条'
+    : '<b>' + inRepo.length + '</b> 条';
 
   clearBtn.hidden = !filtering;
   document.title = repoName() + " — 需求看板";
 }
 
+function closeMenus() {
+  document.querySelectorAll(".fmenu.open").forEach(m => m.classList.remove("open"));
+  document.querySelectorAll('.fbtn[aria-expanded="true"]')
+    .forEach(b => b.setAttribute("aria-expanded", "false"));
+}
+
 fRepo.addEventListener("change", () => { rebuildFilters(); render(); });
 
+// 菜单内的勾选、搜索、开合全部走事件委托，重建选项后无需重新绑定
+filtersEl.addEventListener("change", e => {
+  const cb = e.target;
+  if (!cb.matches("input[type=checkbox]")) return;
+
+  const key = cb.dataset.filter;
+  if (cb.classList.contains("fall-cb")) {
+    optsEl(key).querySelectorAll("input").forEach(x => { x.checked = cb.checked; });
+    syncAll(key);
+  } else {
+    syncAll(cb.closest(".fopts").dataset.filter);
+  }
+  render();
+});
+
+filtersEl.addEventListener("input", e => {
+  if (!e.target.matches(".fsearch-input")) return;
+  const q = e.target.value.trim().toLowerCase();
+  e.target.closest(".fmenu").querySelectorAll(".opt").forEach(o => {
+    o.hidden = !!q && !o.textContent.toLowerCase().includes(q);
+  });
+});
+
+filtersEl.addEventListener("click", e => {
+  const btn = e.target.closest(".fbtn");
+  if (!btn) return;
+
+  const menu = menuEl(btn.dataset.filter);
+  const open = menu.classList.contains("open");
+  closeMenus();
+
+  if (!open) {
+    menu.classList.add("open");
+    btn.setAttribute("aria-expanded", "true");
+    const s = menu.querySelector(".fsearch-input");
+    if (s) { s.value = ""; menu.querySelectorAll(".opt").forEach(o => o.hidden = false); s.focus(); }
+  }
+});
+
 clearBtn.addEventListener("click", () => {
-  ["ver", "who", "as", "pr", "ci"].forEach(filterKey => {
-    const config = filterConfigs[filterKey];
-    const optionsEl = document.getElementById(config.optionsId);
-    const menu = document.getElementById(config.menuId);
-    const allCheckbox = menu.querySelector(".filter-all-checkbox");
-    optionsEl.querySelectorAll("input").forEach(cb => cb.checked = true);
-    allCheckbox.checked = true;
-    updateTags(filterKey);
+  FILTERS.forEach(f => {
+    optsEl(f.key).querySelectorAll("input").forEach(cb => { cb.checked = true; });
+    syncAll(f.key);
   });
   render();
 });
 
-document.querySelectorAll(".filter-btn").forEach(btn => {
+document.addEventListener("click", e => {
+  if (!e.target.closest(".ctrl")) closeMenus();
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeMenus();
+});
+
+document.querySelectorAll(".seg button").forEach(btn => {
   btn.addEventListener("click", () => {
-    const filterKey = btn.dataset.filter;
-    const config = filterConfigs[filterKey];
-    const menu = document.getElementById(config.menuId);
-    const isOpen = menu.classList.contains("open");
-
-    document.querySelectorAll(".filter-menu.open").forEach(m => m.classList.remove("open"));
-    document.querySelectorAll(".filter-btn.active-menu").forEach(b => b.classList.remove("active-menu"));
-
-    if (!isOpen) {
-      menu.classList.add("open");
-      btn.classList.add("active-menu");
-      if (config.searchable) {
-        menu.querySelector(".filter-search-input").focus();
-      }
-    }
-  });
-});
-
-document.querySelectorAll(".filter-search-input").forEach(input => {
-  input.addEventListener("input", (e) => {
-    const menu = e.target.closest(".filter-menu");
-    const query = e.target.value.toLowerCase();
-    const options = menu.querySelectorAll(".filter-option");
-
-    options.forEach(opt => {
-      const text = opt.textContent.toLowerCase();
-      opt.style.display = text.includes(query) ? "" : "none";
-    });
-  });
-});
-
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".ctrl")) {
-    document.querySelectorAll(".filter-menu.open").forEach(m => m.classList.remove("open"));
-    document.querySelectorAll(".filter-btn.active-menu").forEach(b => b.classList.remove("active-menu"));
-  }
-});
-
-document.querySelectorAll(".tabs button").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".tabs button").forEach(b =>
+    document.querySelectorAll(".seg button").forEach(b =>
       b.setAttribute("aria-pressed", String(b === btn))
     );
     document.body.dataset.density = btn.dataset.d;
