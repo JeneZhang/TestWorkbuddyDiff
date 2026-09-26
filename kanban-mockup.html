@@ -292,10 +292,14 @@
   }
 
   .opt:hover { background: var(--raise); }
-  .opt input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+  /* 原生控件只保留可达性，视觉一律交给 .box —— 选项行与「全部」行共用 */
+  .opt input,
+  .fall input { position: absolute; opacity: 0; width: 0; height: 0; }
 
   .box {
     flex: none;
+    position: relative;
     width: 14px; height: 14px;
     border: 1px solid var(--line-2);
     border-radius: 4px;
@@ -306,10 +310,30 @@
   }
 
   .box svg { opacity: 0; color: #fff; }
-  .opt:hover .box { border-color: var(--bar-thumb); }
-  .opt input:checked ~ .box { background: var(--accent); border-color: var(--accent); }
-  .opt input:checked ~ .box svg { opacity: 1; }
-  .opt input:focus-visible ~ .box { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .opt:hover .box,
+  .fall:hover .box { border-color: var(--bar-thumb); }
+
+  .opt input:checked ~ .box,
+  .fall input:checked ~ .box { background: var(--accent); border-color: var(--accent); }
+
+  .opt input:checked ~ .box svg,
+  .fall input:checked ~ .box svg { opacity: 1; }
+
+  .opt input:focus-visible ~ .box,
+  .fall input:focus-visible ~ .box { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* 半选：只选了一部分。短横区别于勾，避免和「全选」混读 */
+  .fall input:indeterminate ~ .box { background: var(--accent); border-color: var(--accent); }
+  .fall input:indeterminate ~ .box::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 7px; height: 1.5px;
+    border-radius: 1px;
+    background: #fff;
+  }
 
   .opt-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .opt-t .sub { color: var(--text-3); }
@@ -854,7 +878,10 @@ function syncAll(key) {
   const on = all.filter(cb => cb.checked);
   const isAll = all.length > 0 && on.length === all.length;
 
-  menuEl(key).querySelector(".fall-cb").checked = isAll;
+  // 选了一部分时「全部」呈半选，免得被读成「一个都没选」
+  const allCb = menuEl(key).querySelector(".fall-cb");
+  allCb.checked = isAll;
+  allCb.indeterminate = on.length > 0 && !isAll;
 
   const valEl = document.getElementById("f-" + key + "-val");
   const btn = btnEl(key);
