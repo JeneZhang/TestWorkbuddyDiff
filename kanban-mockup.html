@@ -8,7 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
+  /* 两套主题只改这一组变量，其余样式一律走 var() */
+  :root,
+  body[data-theme="light"] {
     color-scheme: light;
 
     /* 中性阶：页面略灰，列更灰，卡片与浮层是纯白 —— 越靠前越亮 */
@@ -44,9 +46,63 @@
     /* 圆点用饱和色够醒目，但同色的 11px 文字要再压暗才达标 */
     --err-text:  #c22c36;
 
+    /* 分段控件的选中态：浅色下浮起，深色下沉入 */
+    --seg-on:    #ffffff;
+    --seg-ring:  0 1px 2px rgba(16, 17, 20, .07), 0 0 0 1px rgba(16, 17, 20, .04);
+
+    --bar-thumb: #b9bcc4;
+
+    /* 身份色六档，白字可读 */
+    --p1: #3b5bdb; --p2: #1f8a68; --p3: #7048c8;
+    --p4: #b25f2e; --p5: #566270; --p6: #ad3e6f;
+
     --overlay: 0 0 0 1px rgba(16, 17, 20, .05),
                0 8px 16px -6px rgba(16, 17, 20, .1),
                0 20px 40px -12px rgba(16, 17, 20, .14);
+  }
+
+  body[data-theme="dark"] {
+    color-scheme: dark;
+
+    /* 深色下层级反向：页面最深，卡片与浮层最浅 */
+    --bg:        #08090a;
+    --surface:   #0f1011;
+    --panel:     #16181a;
+    --panel-2:   #131517;
+    --raise:     #1c1f22;
+
+    --card-hover: #1c1f22;
+
+    --line:      #1f2226;
+    --line-2:    #2a2e33;
+
+    --state:     #121416;
+    --state-2:   #191c1f;
+
+    --text:      #e9ebed;
+    --text-2:    #9ba2aa;
+    --text-3:    #868d95;
+
+    --accent:    #5e6ad2;
+    --accent-2:  #98a0e8;
+    --accent-bg: rgba(94, 106, 210, .16);
+
+    --ok:        #4cb782;
+    --amber:     #f2994a;
+    --err:       #eb5757;
+    --err-text:  #f27a7a;
+
+    --seg-on:    #23262a;
+    --seg-ring:  none;
+
+    --bar-thumb: #3a3f46;
+
+    --p1: #5c7cfa; --p2: #38ab84; --p3: #9775e0;
+    --p4: #cf8352; --p5: #737f8c; --p6: #cf6493;
+
+    --overlay: 0 0 0 1px rgba(255, 255, 255, .04),
+               0 8px 16px -4px rgba(0, 0, 0, .5),
+               0 24px 48px -12px rgba(0, 0, 0, .6);
   }
 
   * { box-sizing: border-box; }
@@ -77,7 +133,7 @@
     border: 3px solid transparent;
     background-clip: content-box;
   }
-  ::-webkit-scrollbar-thumb:hover { background: #b9bcc4; background-clip: content-box; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--bar-thumb); background-clip: content-box; }
 
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px; }
 
@@ -139,11 +195,11 @@
 
   .seg button:hover { color: var(--text); }
 
-  /* 分段控件底槽是灰的，所以选中项要浮起来（变白），不是压下去 */
+  /* 分段控件底槽是灰的，浅色下选中项浮起（变白），深色下沉入 */
   .seg button[aria-pressed="true"] {
-    background: var(--panel);
+    background: var(--seg-on);
     color: var(--text);
-    box-shadow: 0 1px 2px rgba(16, 17, 20, .07), 0 0 0 1px rgba(16, 17, 20, .04);
+    box-shadow: var(--seg-ring);
   }
 
   /* ---------- 筛选器 ---------- */
@@ -250,7 +306,7 @@
   }
 
   .box svg { opacity: 0; color: #fff; }
-  .opt:hover .box { border-color: #b9bcc4; }
+  .opt:hover .box { border-color: var(--bar-thumb); }
   .opt input:checked ~ .box { background: var(--accent); border-color: var(--accent); }
   .opt input:checked ~ .box svg { opacity: 1; }
   .opt input:focus-visible ~ .box { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -324,7 +380,15 @@
     padding: 11px 12px 9px;
   }
 
-  .col-head .ico { flex: none; display: flex; }
+  /* 图标用 currentColor 取色，切主题只需变量生效，无需重新渲染 */
+  .col-head .ico { flex: none; display: flex; color: var(--accent); }
+  .col:first-child .col-head .ico { color: var(--text-3); }
+  .col:nth-child(2) .col-head .ico { color: var(--text-2); }
+  .col:last-child .col-head .ico { color: var(--ok); }
+
+  /* 「已完成」的勾是从实心圆里挖空的，填色须等于列底色 */
+  .col-head .ico .knock { stroke: var(--surface); }
+
   .col-head h2 { margin: 0; font-size: 12px; font-weight: 500; color: var(--text); }
   .col-head .n { font-size: 12px; color: var(--text-2); }
 
@@ -404,12 +468,12 @@
   .card:hover .who { box-shadow: 0 0 0 1.5px var(--card-hover); }
 
   /* 六色只为区分身份。均压到白字可读的明度档，不表达任何状态 */
-  .who[data-c="1"] { background: #3b5bdb; }
-  .who[data-c="2"] { background: #1f8a68; }
-  .who[data-c="3"] { background: #7048c8; }
-  .who[data-c="4"] { background: #b25f2e; }
-  .who[data-c="5"] { background: #566270; }
-  .who[data-c="6"] { background: #ad3e6f; }
+  .who[data-c="1"] { background: var(--p1); }
+  .who[data-c="2"] { background: var(--p2); }
+  .who[data-c="3"] { background: var(--p3); }
+  .who[data-c="4"] { background: var(--p4); }
+  .who[data-c="5"] { background: var(--p5); }
+  .who[data-c="6"] { background: var(--p6); }
 
   .who.na {
     background: transparent;
@@ -473,15 +537,6 @@
 
   .row[data-ci="fail"] .kw { color: var(--err-text); }
 
-  /* ---------- 紧凑模式 ---------- */
-  /* 保留头像（站会要知道谁在做），隐去名字与引用 */
-
-  body[data-density="compact"] .meta .nm { display: none; }
-  body[data-density="compact"] .row .ref { display: none; }
-  body[data-density="compact"] .title a { -webkit-line-clamp: 1; }
-  body[data-density="compact"] .title { margin-bottom: 7px; }
-  body[data-density="compact"] .card-body { padding: 8px 10px 7px; }
-
   .empty { padding: 10px 2px; font-size: 12px; color: var(--text-3); }
 
   @media (max-width: 900px) {
@@ -507,12 +562,12 @@
   }
 </style>
 </head>
-<body data-density="full">
+<body data-theme="light">
 
 <div class="bar">
   <div class="bar-row">
     <h1 class="brand">
-      <span class="org">workbuddy</span><span class="slash">/</span>
+      <span class="org">genie</span><span class="slash">/</span>
       <span class="repo-wrap">
         <select id="f-repo" class="repo" aria-label="仓库"></select>
         <span class="caret">
@@ -525,9 +580,9 @@
 
     <span class="bar-spacer"></span>
 
-    <div class="seg" role="group" aria-label="卡片密度">
-      <button type="button" data-d="full" aria-pressed="true">完整</button>
-      <button type="button" data-d="compact" aria-pressed="false">紧凑</button>
+    <div class="seg" role="group" aria-label="配色主题">
+      <button type="button" data-theme="light" aria-pressed="true">浅色</button>
+      <button type="button" data-theme="dark" aria-pressed="false">深色</button>
     </div>
   </div>
 
@@ -548,13 +603,13 @@ const COLS = [
 
 // 仓库名来自数据，不写死在标题里
 const REPOS = [
-  { key: "api",   name: "workbuddy-api" },
-  { key: "web",   name: "workbuddy-web" },
-  { key: "agent", name: "workbuddy-agent" }
+  { key: "genie",       name: "genie" },
+  { key: "genie-web",   name: "genie-web" },
+  { key: "genie-agent", name: "genie-agent" }
 ];
 
 // 链接地址集中在这里，换代码托管平台只改这两个函数
-const HOST = "https://git.workbuddy.internal/workbuddy";
+const HOST = "https://git.genie.internal/genie";
 function issueURL(repo, id) { return HOST + "/" + repo + "/issues/" + id; }
 function prURL(repo, num)   { return HOST + "/" + repo + "/pulls/" + num; }
 
@@ -572,70 +627,70 @@ const PEOPLE = {
 // PR 三态：pr 为 null 表示未关联；merged 决定「已合并」或「开启中」
 // ci 独立于 PR 状态：'pass' | 'running' | 'fail' | null(未触发)
 const ISSUES = [
-  { id: 421, repo: "api", col: "to-review", ver: "5.8.0", who: "alice", as: [],
+  { id: 421, repo: "genie", col: "to-review", ver: "5.8.0", who: "alice", as: [],
     title: "部署接口补充结构化日志", pr: null },
-  { id: 433, repo: "api", col: "to-review", ver: "5.7.3", who: "dmitri", as: [],
+  { id: 433, repo: "genie", col: "to-review", ver: "5.7.3", who: "dmitri", as: [],
     title: "迁移脚本 0041 删除了错误的索引", pr: null },
 
-  { id: 447, repo: "api", col: "reviewed", ver: "5.9.0", who: "priya", as: ["chen", "dmitri"],
+  { id: 447, repo: "genie", col: "reviewed", ver: "5.9.0", who: "priya", as: ["chen", "dmitri"],
     title: "并行矩阵任务把执行机池耗尽", pr: null },
-  { id: 489, repo: "api", col: "reviewed", ver: "5.9.0", who: "dmitri", as: [],
+  { id: 489, repo: "genie", col: "reviewed", ver: "5.9.0", who: "dmitri", as: [],
     title: "拆分单体配置加载器", pr: null },
 
-  { id: 456, repo: "api", col: "trial", ver: "5.8.0", who: "alice", as: ["alice"],
+  { id: 456, repo: "genie", col: "trial", ver: "5.8.0", who: "alice", as: ["alice"],
     title: "大报文场景下 Webhook 投递超时",
     pr: { num: 812, author: "林安", merged: false, ci: "fail" } },
-  { id: 478, repo: "api", col: "trial", ver: "5.9.0", who: "bob", as: ["bob"],
+  { id: 478, repo: "genie", col: "trial", ver: "5.9.0", who: "bob", as: ["bob"],
     title: "缓存预热阻塞就绪探针",
     pr: { num: 818, author: "陈博", merged: false, ci: "pass" } },
-  { id: 481, repo: "api", col: "trial", ver: "5.8.0", who: "priya", as: ["priya", "alice", "chen"],
+  { id: 481, repo: "genie", col: "trial", ver: "5.8.0", who: "priya", as: ["priya", "alice", "chen"],
     title: "服务账号写入时审计日志缺少操作人",
     pr: { num: 820, author: "普里", merged: false, ci: "running" } },
-  { id: 493, repo: "api", col: "trial", ver: "5.9.0", who: "chen", as: ["chen"],
+  { id: 493, repo: "genie", col: "trial", ver: "5.9.0", who: "chen", as: ["chen"],
     title: "灰度开关支持按租户维度下发",
     pr: { num: 833, author: "程晨", merged: false, ci: "pass" } },
 
-  { id: 502, repo: "api", col: "to-accept", ver: "5.9.0", who: "bob", as: ["chen"],
+  { id: 502, repo: "genie", col: "to-accept", ver: "5.9.0", who: "bob", as: ["chen"],
     title: "需求与 PR 的关联改为事件驱动",
     pr: { num: 821, author: "陈博", merged: false, ci: "pass" } },
-  { id: 510, repo: "api", col: "to-accept", ver: "5.8.0", who: "alice", as: ["chen", "bob"],
+  { id: 510, repo: "genie", col: "to-accept", ver: "5.8.0", who: "alice", as: ["chen", "bob"],
     title: "补充发版切分检查清单",
     pr: { num: 826, author: "程晨", merged: false, ci: null, extra: 1 } },
 
-  { id: 515, repo: "api", col: "accepted", ver: "5.9.0", who: "chen", as: ["chen"],
+  { id: 515, repo: "genie", col: "accepted", ver: "5.9.0", who: "chen", as: ["chen"],
     title: "灰度失败后出现重试风暴",
     pr: { num: 829, author: "程晨", merged: false, ci: "fail" } },
-  { id: 520, repo: "api", col: "accepted", ver: "5.8.0", who: "bob", as: ["bob"],
+  { id: 520, repo: "genie", col: "accepted", ver: "5.8.0", who: "bob", as: ["bob"],
     title: "导出任务超时后不释放连接",
     pr: { num: 835, author: "陈博", merged: true, into: "release/5.9.0", ci: "pass" } },
 
-  { id: 388, repo: "api", col: "done", ver: "5.7.3", who: "chen", as: ["chen"],
+  { id: 388, repo: "genie", col: "done", ver: "5.7.3", who: "chen", as: ["chen"],
     title: "看板列顺序按用户维度持久化",
     pr: { num: 794, author: "程晨", merged: true, into: "release/5.7.3", ci: "pass" } },
-  { id: 402, repo: "api", col: "done", ver: "5.7.3", who: "priya", as: ["priya", "dmitri"],
+  { id: 402, repo: "genie", col: "done", ver: "5.7.3", who: "priya", as: ["priya", "dmitri"],
     title: "版本筛选未排除已归档版本",
     pr: { num: 801, author: "普里", merged: true, into: "release/5.7.3", ci: "pass", extra: 2 } },
 
-  { id: 610, repo: "web", col: "to-review", ver: "5.9.0", who: "fang", as: [],
+  { id: 610, repo: "genie-web", col: "to-review", ver: "5.9.0", who: "fang", as: [],
     title: "看板横向滚动时列头不吸顶", pr: null },
-  { id: 618, repo: "web", col: "reviewed", ver: "5.8.0", who: "alice", as: ["fang"],
+  { id: 618, repo: "genie-web", col: "reviewed", ver: "5.8.0", who: "alice", as: ["fang"],
     title: "需求详情抽屉支持键盘关闭", pr: null },
-  { id: 624, repo: "web", col: "trial", ver: "5.9.0", who: "fang", as: ["fang", "alice"],
+  { id: 624, repo: "genie-web", col: "trial", ver: "5.9.0", who: "fang", as: ["fang", "alice"],
     title: "卡片密度切换后滚动位置丢失",
     pr: { num: 901, author: "方琳", merged: false, ci: "running" } },
-  { id: 631, repo: "web", col: "to-accept", ver: "5.8.0", who: "bob", as: ["fang"],
+  { id: 631, repo: "genie-web", col: "to-accept", ver: "5.8.0", who: "bob", as: ["fang"],
     title: "筛选条件写入地址栏以便分享",
     pr: { num: 907, author: "方琳", merged: false, ci: "pass" } },
-  { id: 640, repo: "web", col: "done", ver: "5.8.0", who: "fang", as: ["fang"],
+  { id: 640, repo: "genie-web", col: "done", ver: "5.8.0", who: "fang", as: ["fang"],
     title: "版本下拉按语义化版本排序",
     pr: { num: 912, author: "方琳", merged: true, into: "release/5.8.0", ci: "pass" } },
 
-  { id: 705, repo: "agent", col: "reviewed", ver: "5.9.0", who: "dmitri", as: ["dmitri"],
+  { id: 705, repo: "genie-agent", col: "reviewed", ver: "5.9.0", who: "dmitri", as: ["dmitri"],
     title: "执行机离线后任务不重新排队", pr: null },
-  { id: 719, repo: "agent", col: "trial", ver: "5.9.0", who: "chen", as: ["priya", "dmitri"],
+  { id: 719, repo: "genie-agent", col: "trial", ver: "5.9.0", who: "chen", as: ["priya", "dmitri"],
     title: "日志上传限流导致尾部日志丢失",
     pr: { num: 958, author: "普里", merged: false, ci: "fail" } },
-  { id: 712, repo: "agent", col: "accepted", ver: "5.8.0", who: "priya", as: ["dmitri"],
+  { id: 712, repo: "genie-agent", col: "accepted", ver: "5.8.0", who: "priya", as: ["dmitri"],
     title: "凭据轮换期间执行机掉线",
     pr: { num: 950, author: "周德", merged: true, into: "release/5.8.0", ci: "pass" } }
 ];
@@ -687,31 +742,27 @@ function esc(s) {
   return String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
 }
 
-// 图标取色直接读 CSS 变量，配色只在 :root 里维护一份
-const css = k => getComputedStyle(document.documentElement).getPropertyValue(k).trim();
-
-// 列头图标把流程位置编码成环形填充量：虚线环 → 逐级填充 → 实心带勾
+// 列头图标把流程位置编码成环形填充量：虚线环 → 逐级填充 → 实心带勾。
+// 颜色全部交给 CSS（currentColor / .knock），所以切主题不必重新渲染。
 function colIcon(i, total) {
   const last = i === total - 1;
-  const c = i === 0 ? css("--text-3") : last ? css("--ok")
-          : i === 1 ? css("--text-2") : css("--accent");
 
   if (last) {
     return '<svg width="14" height="14" viewBox="0 0 14 14" fill="none">' +
-      '<circle cx="7" cy="7" r="6.25" fill="' + c + '"/>' +
-      '<path d="M4.2 7.1 6.1 9 9.8 5.2" stroke="' + css("--panel") + '" stroke-width="1.5" ' +
+      '<circle cx="7" cy="7" r="6.25" fill="currentColor"/>' +
+      '<path class="knock" d="M4.2 7.1 6.1 9 9.8 5.2" stroke-width="1.5" ' +
         'stroke-linecap="round" stroke-linejoin="round"/></svg>';
   }
 
   // 内圈用粗描边从圆心往外铺，dasharray 控制填充比例（r=2.75 周长≈17.28）
   const frac = [0, 0, .34, .62, .86][i] || 0;
   const inner = frac
-    ? '<circle cx="7" cy="7" r="2.75" fill="none" stroke="' + c + '" stroke-width="5.5" ' +
+    ? '<circle cx="7" cy="7" r="2.75" fill="none" stroke="currentColor" stroke-width="5.5" ' +
       'stroke-dasharray="' + (17.28 * frac).toFixed(2) + ' 17.28" transform="rotate(-90 7 7)"/>'
     : '';
 
   return '<svg width="14" height="14" viewBox="0 0 14 14" fill="none">' +
-    '<circle cx="7" cy="7" r="5.6" stroke="' + c + '" stroke-width="1.4"' +
+    '<circle cx="7" cy="7" r="5.6" stroke="currentColor" stroke-width="1.4"' +
       (i === 0 ? ' stroke-dasharray="1.7 2.1"' : '') + '/>' +
     inner + '</svg>';
 }
@@ -1014,12 +1065,13 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape") closeMenus();
 });
 
+// 主题只切 body 上的属性，配色由 CSS 变量接管，无需重新渲染看板
 document.querySelectorAll(".seg button").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".seg button").forEach(b =>
       b.setAttribute("aria-pressed", String(b === btn))
     );
-    document.body.dataset.density = btn.dataset.d;
+    document.body.dataset.theme = btn.dataset.theme;
   });
 });
 
