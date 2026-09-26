@@ -9,33 +9,44 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    color-scheme: dark;
+    color-scheme: light;
 
-    /* 中性阶：页面最深，浮层最浅，四级足够表达层次 */
-    --bg:        #08090a;
-    --surface:   #0f1011;
-    --panel:     #16181a;
-    --panel-2:   #131517;
-    --raise:     #1c1f22;
+    /* 中性阶：页面略灰，列更灰，卡片与浮层是纯白 —— 越靠前越亮 */
+    --bg:        #fcfcfd;
+    --surface:   #f1f2f4;
+    --panel:     #ffffff;
+    --panel-2:   #f7f8f9;
+    --raise:     #eef0f3;
 
-    --line:      #1f2226;
-    --line-2:    #2a2e33;
+    /* 卡片坐在灰色列上，悬停要更亮而不是更暗，否则会陷进列里 */
+    --card-hover: #f8f9fb;
 
-    --text:      #e9ebed;
-    --text-2:    #8a9098;
-    --text-3:    #5c6167;
+    --line:      #e6e7ec;
+    --line-2:    #d6d8de;
+
+    /* 卡片底部状态条：静态 / 悬停。单独成一档，免得跟 --raise 撞色 */
+    --state:     #f7f8f9;
+    --state-2:   #dfe1e6;
+
+    /* 三级文字都按 11px 小字的 AA 门槛（4.5:1）取值，浅底上不能再淡 */
+    --text:      #16171a;
+    --text-2:    #555b65;
+    --text-3:    #6b7179;
 
     --accent:    #5e6ad2;
-    --accent-2:  #8b93e0;
-    --accent-bg: rgba(94, 106, 210, .13);
+    --accent-2:  #4a55b8;
+    --accent-bg: rgba(94, 106, 210, .1);
 
-    --ok:        #4cb782;
-    --amber:     #f2994a;
-    --err:       #eb5757;
+    --ok:        #2f9e74;
+    --amber:     #d9822b;
+    --err:       #d93b45;
 
-    --overlay: 0 0 0 1px rgba(255, 255, 255, .04),
-               0 8px 16px -4px rgba(0, 0, 0, .5),
-               0 24px 48px -12px rgba(0, 0, 0, .6);
+    /* 圆点用饱和色够醒目，但同色的 11px 文字要再压暗才达标 */
+    --err-text:  #c22c36;
+
+    --overlay: 0 0 0 1px rgba(16, 17, 20, .05),
+               0 8px 16px -6px rgba(16, 17, 20, .1),
+               0 20px 40px -12px rgba(16, 17, 20, .14);
   }
 
   * { box-sizing: border-box; }
@@ -66,7 +77,7 @@
     border: 3px solid transparent;
     background-clip: content-box;
   }
-  ::-webkit-scrollbar-thumb:hover { background: #3a3f46; background-clip: content-box; }
+  ::-webkit-scrollbar-thumb:hover { background: #b9bcc4; background-clip: content-box; }
 
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px; }
 
@@ -127,7 +138,13 @@
   }
 
   .seg button:hover { color: var(--text); }
-  .seg button[aria-pressed="true"] { background: var(--raise); color: var(--text); }
+
+  /* 分段控件底槽是灰的，所以选中项要浮起来（变白），不是压下去 */
+  .seg button[aria-pressed="true"] {
+    background: var(--panel);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(16, 17, 20, .07), 0 0 0 1px rgba(16, 17, 20, .04);
+  }
 
   /* ---------- 筛选器 ---------- */
 
@@ -233,7 +250,7 @@
   }
 
   .box svg { opacity: 0; color: #fff; }
-  .opt:hover .box { border-color: #40454c; }
+  .opt:hover .box { border-color: #b9bcc4; }
   .opt input:checked ~ .box { background: var(--accent); border-color: var(--accent); }
   .opt input:checked ~ .box svg { opacity: 1; }
   .opt input:focus-visible ~ .box { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -309,7 +326,7 @@
 
   .col-head .ico { flex: none; display: flex; }
   .col-head h2 { margin: 0; font-size: 12px; font-weight: 500; color: var(--text); }
-  .col-head .n { font-size: 12px; color: var(--text-3); }
+  .col-head .n { font-size: 12px; color: var(--text-2); }
 
   .col-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 8px 8px; }
 
@@ -325,7 +342,7 @@
     overflow: hidden;
   }
 
-  .card:hover { background: var(--raise); border-color: var(--line-2); }
+  .card:hover { background: var(--card-hover); border-color: var(--line-2); }
   .card:focus-within { border-color: var(--accent); }
 
   .card-body { padding: 9px 10px 8px; }
@@ -384,14 +401,15 @@
     letter-spacing: 0;
   }
 
-  .card:hover .who { box-shadow: 0 0 0 1.5px var(--raise); }
+  .card:hover .who { box-shadow: 0 0 0 1.5px var(--card-hover); }
 
-  .who[data-c="1"] { background: #4c6ef5; }
-  .who[data-c="2"] { background: #2f9e74; }
-  .who[data-c="3"] { background: #8a63d2; }
-  .who[data-c="4"] { background: #c2703e; }
-  .who[data-c="5"] { background: #5a6570; }
-  .who[data-c="6"] { background: #bf4b7d; }
+  /* 六色只为区分身份。均压到白字可读的明度档，不表达任何状态 */
+  .who[data-c="1"] { background: #3b5bdb; }
+  .who[data-c="2"] { background: #1f8a68; }
+  .who[data-c="3"] { background: #7048c8; }
+  .who[data-c="4"] { background: #b25f2e; }
+  .who[data-c="5"] { background: #566270; }
+  .who[data-c="6"] { background: #ad3e6f; }
 
   .who.na {
     background: transparent;
@@ -405,8 +423,8 @@
   /* ---------- 状态区 ---------- */
   /* PR 与流水线各占一行，互不混用；颜色只落在流水线圆点上 */
 
-  .state { border-top: 1px solid var(--line); background: var(--panel-2); }
-  .card:hover .state { background: rgba(0, 0, 0, .18); }
+  .state { border-top: 1px solid var(--line); background: var(--state); }
+  .card:hover .state { background: var(--state-2); }
 
   .row { padding: 5px 10px; display: flex; align-items: center; gap: 7px; min-width: 0; }
   .row + .row { padding-top: 0; }
@@ -440,19 +458,20 @@
     animation: spin 1.3s linear infinite;
   }
 
+  /* 环心要挖空成状态条的底色，悬停时跟着变 */
   .dot.running::after {
     content: "";
     position: absolute;
     inset: 2px;
     border-radius: 50%;
-    background: var(--panel-2);
+    background: var(--state);
   }
 
-  .card:hover .dot.running::after { background: #12151a; }
+  .card:hover .dot.running::after { background: var(--state-2); }
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .row[data-ci="fail"] .kw { color: var(--err); }
+  .row[data-ci="fail"] .kw { color: var(--err-text); }
 
   /* ---------- 紧凑模式 ---------- */
   /* 保留头像（站会要知道谁在做），隐去名字与引用 */
@@ -668,15 +687,19 @@ function esc(s) {
   return String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
 }
 
+// 图标取色直接读 CSS 变量，配色只在 :root 里维护一份
+const css = k => getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+
 // 列头图标把流程位置编码成环形填充量：虚线环 → 逐级填充 → 实心带勾
 function colIcon(i, total) {
   const last = i === total - 1;
-  const c = i === 0 ? "#5c6167" : last ? "#4cb782" : i === 1 ? "#8a9098" : "#5e6ad2";
+  const c = i === 0 ? css("--text-3") : last ? css("--ok")
+          : i === 1 ? css("--text-2") : css("--accent");
 
   if (last) {
     return '<svg width="14" height="14" viewBox="0 0 14 14" fill="none">' +
       '<circle cx="7" cy="7" r="6.25" fill="' + c + '"/>' +
-      '<path d="M4.2 7.1 6.1 9 9.8 5.2" stroke="#08090a" stroke-width="1.5" ' +
+      '<path d="M4.2 7.1 6.1 9 9.8 5.2" stroke="' + css("--panel") + '" stroke-width="1.5" ' +
         'stroke-linecap="round" stroke-linejoin="round"/></svg>';
   }
 
