@@ -410,7 +410,7 @@
   .col:nth-child(2) .col-head .ico { color: var(--text-2); }
   .col:last-child .col-head .ico { color: var(--ok); }
 
-  /* 「已完成」的勾是从实心圆里挖空的，填色须等于列底色 */
+  /* 「待发布」的勾是从实心圆里挖空的，填色须等于列底色 */
   .col-head .ico .knock { stroke: var(--surface); }
 
   .col-head h2 { margin: 0; font-size: 12px; font-weight: 500; color: var(--text); }
@@ -621,8 +621,8 @@ const COLS = [
   { key: "reviewed",   name: "已评审" },
   { key: "trial",      name: "产品体验中" },
   { key: "to-accept",  name: "待验收" },
-  { key: "accepted",   name: "验收通过" },
-  { key: "done",       name: "已完成" }
+  { key: "accepted",   name: "分支验收通过" },
+  { key: "done",       name: "待发布" }
 ];
 
 // 仓库名来自数据，不写死在标题里
